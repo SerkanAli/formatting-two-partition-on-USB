@@ -64,7 +64,7 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
     }
     
     func FilltheViewTable(){
-
+        self.objects.removeAllObjects()
         if let session = DASessionCreate(kCFAllocatorDefault){
             let mountedVolumes = NSFileManager.defaultManager().mountedVolumeURLsIncludingResourceValuesForKeys([], options: [])!
             for volume in  mountedVolumes{
@@ -72,10 +72,14 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
                     if let bsdName = String.fromCString(DADiskGetBSDName(disk)){
                         let index = bsdName.rangeOfString("disk")
                         let bufString : String = volume.path! + "  disk" + String( bsdName[index!.endIndex])
-                        self.objects.addObject(bufString)
+                        if( CheckifUSB(String(bsdName[index!.endIndex]))){
+                            self.objects.addObject(bufString)
+                        }
+                        
                     }
                 }
             }
+            self.TableView.reloadData()
         }
 
     }
@@ -110,43 +114,7 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
             return
             }
         
-        //Check that the disk is a USB => errindex 1
-        let taskProfiler = NSTask()
-        let taskGrep = NSTask()
-        let outputPipe = NSPipe()
-        
-        taskProfiler.launchPath = "/usr/sbin/system_profiler"
-        taskGrep.launchPath = "/usr/bin/grep"
-        
-        taskProfiler.arguments = ["SPUSBDataType"]
-        taskGrep.arguments = ["BSD Name"]
-        
-        taskProfiler.standardOutput = outputPipe
-        taskGrep.standardInput = outputPipe
-        
-        let pipeMe = NSPipe()
-        taskGrep.standardOutput = pipeMe
-    
-        let grepOutput = pipeMe.fileHandleForReading
-        
-        taskProfiler.launch()
-        taskProfiler.waitUntilExit()
-        taskGrep.launch()
-        taskGrep.waitUntilExit()
-        
-        let data = grepOutput.readDataToEndOfFile()
-        let output  = String(data: data, encoding: NSUTF8StringEncoding)
-        let index = output?.rangeOfString("disk" + DiskName)
-        // Check Usb
-        if( index == nil){
-            ShowWarningMsg(1)
-            return
-            }
-
-        // Check the name for the new Partition => errindex = 2
-        print(NameMacPar.isEqual(NameWinPar))
-        print(NameWinPar.isEqual(" "))
-        print(NameMacPar.isEqual(""))
+               // Check the name for the new Partition => errindex = 2
         let blank = ""
         if( NameMacPar.stringValue == NameWinPar.stringValue || NameWinPar.stringValue == blank || NameMacPar.stringValue == blank ){
             ShowWarningMsg(2)
@@ -166,6 +134,38 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
         print(outputString)
         FilltheViewTable()
         ShowWarningMsg(3)
+    }
+    
+    func CheckifUSB (index : String) -> Bool {
+        //Check that the disk is a USB => errindex 1
+        let taskProfiler = NSTask()
+        let taskGrep = NSTask()
+        let outputPipe = NSPipe()
+        
+        taskProfiler.launchPath = "/usr/sbin/system_profiler"
+        taskGrep.launchPath = "/usr/bin/grep"
+        
+        taskProfiler.arguments = ["SPUSBDataType"]
+        taskGrep.arguments = ["BSD Name"]
+        
+        taskProfiler.standardOutput = outputPipe
+        taskGrep.standardInput = outputPipe
+        
+        let pipeMe = NSPipe()
+        taskGrep.standardOutput = pipeMe
+        
+        let grepOutput = pipeMe.fileHandleForReading
+        
+        taskProfiler.launch()
+        taskProfiler.waitUntilExit()
+        taskGrep.launch()
+        taskGrep.waitUntilExit()
+        
+        let data = grepOutput.readDataToEndOfFile()
+        let output  = String(data: data, encoding: NSUTF8StringEncoding)
+        let control = output?.rangeOfString("disk" + index)
+        
+        return control != nil ;
     }
     
     func ShowWarningMsg(errindex : Int) {
