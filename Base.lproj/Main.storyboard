@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="9532" systemVersion="16B2555" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="B8D-0N-5wS">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="9532" systemVersion="16C67" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="B8D-0N-5wS">
     <dependencies>
         <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="9532"/>
@@ -845,7 +845,7 @@
                                 </textFieldCell>
                             </textField>
                             <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HOL-5o-cwc">
-                                <rect key="frame" x="230" y="79" width="39" height="17"/>
+                                <rect key="frame" x="207" y="79" width="62" height="17"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Gb" id="7O7-nz-bud">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -853,7 +853,7 @@
                                 </textFieldCell>
                             </textField>
                             <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="YAp-JG-KcQ">
-                                <rect key="frame" x="423" y="79" width="39" height="17"/>
+                                <rect key="frame" x="401" y="79" width="61" height="17"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Gb" id="r0S-Qn-TJC">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -871,6 +871,8 @@
                         <outlet property="SlldeBarForPar" destination="Hdo-Ka-yNl" id="fYO-lN-GFY"/>
                         <outlet property="TableView" destination="xsR-fJ-jK9" id="UZI-tm-2b5"/>
                         <outlet property="ValueMacPartition" destination="MQ1-DB-feq" id="RiT-AL-fua"/>
+                        <outlet property="ValueTextMac" destination="YAp-JG-KcQ" id="2eq-sA-hoe"/>
+                        <outlet property="ValueTextWin" destination="HOL-5o-cwc" id="MD6-RP-qbn"/>
                         <outlet property="ValueWindowsPartition" destination="cod-To-Fr3" id="WBM-GS-JkI"/>
                     </connections>
                 </viewController>
