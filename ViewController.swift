@@ -35,69 +35,88 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
 //        [Progress, setHidden:YES]
     }
 
-    override var representedObject: AnyObject? {
-        didSet {
-        // Update the view, if already loaded.
-        }
-    }
-    
-    func tableView(tableView: NSTableView, viewForTableColumn tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        let cellView = TableView.makeViewWithIdentifier("cell", owner: self) as! NSTableCellView
-        cellView.textField!.stringValue = self.objects.objectAtIndex(row) as! String
+       
+    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        let cellView = TableView.make(withIdentifier: "cell", owner: self) as! NSTableCellView
+        cellView.textField!.stringValue = self.objects.object(at: row) as! String
         return cellView
     }
     
-    func numberOfRowsInTableView(tableView: NSTableView) -> Int {
+    func numberOfRows(in tableView: NSTableView) -> Int {
         return self.objects.count
     }
     
-    func tableViewSelectionDidChange(notification: NSNotification) {
+    func tableViewSelectionDidChange(_ notification: Notification) {
         if( self.TableView.numberOfSelectedRows > 0)
         {
-            let selectedItem = self.objects.objectAtIndex(self.TableView.selectedRow) as! String
-            let index = selectedItem.rangeOfString("disk")
-            DiskName = String(selectedItem[index!.endIndex])
+            let selectedItem = self.objects.object(at: self.TableView.selectedRow) as! String
+            let index = selectedItem.range(of: "disk")
+            DiskName = String(selectedItem[index!.upperBound])
             
            // self.TableView.deselectRow(self.TableView.selectedRow)
         }
     }
     
     func FilltheViewTable(){
-        self.objects.removeAllObjects()
-        if let session = DASessionCreate(kCFAllocatorDefault){
-            let mountedVolumes = NSFileManager.defaultManager().mountedVolumeURLsIncludingResourceValuesForKeys([], options: [])!
-            for volume in  mountedVolumes{
-                if let disk = DADiskCreateFromVolumePath(kCFAllocatorDefault, session, volume){
-                    if let bsdName = String.fromCString(DADiskGetBSDName(disk)){
-                        let index = bsdName.rangeOfString("disk")
-                        var bufString : String = volume.path! + "  disk" + String( bsdName[index!.endIndex])
-                        bsdName.containsString(String(bsdName[index!.endIndex]))
-                        let USBIndex = CheckifUSB(String(bsdName[index!.endIndex]))
-                        if( USBIndex != -1){
-                            let sizeOfMount =  CheckSizeUSB(USBIndex)
-                            let sizeDouble = Double(Double(Int(sizeOfMount / 10000000))/100.0)
-                            bufString += "                         "
-                            bufString += "\(sizeDouble)"
-                            bufString += " GB"
-                            if( sizeDouble < 65.0){
-                                self.objects.addObject(bufString)
-                            }
-                            
-                        }
-                    }
+        let taskProfiler = Process()
+        let taskGrep = Process()
+        let outputPipe = Pipe()
+        
+        taskProfiler.launchPath = "/usr/sbin/system_profiler"
+        taskGrep.launchPath = "/usr/bin/grep"
+        
+        taskProfiler.arguments = ["SPUSBDataType"]
+        taskGrep.arguments = ["BSD Name"]
+        
+        taskProfiler.standardOutput = outputPipe
+        taskGrep.standardInput = outputPipe
+        
+        let pipeMe = Pipe()
+        taskGrep.standardOutput = pipeMe
+        
+        let grepOutput = pipeMe.fileHandleForReading
+        
+        taskProfiler.launch()
+        taskProfiler.waitUntilExit()
+        taskGrep.launch()
+        taskGrep.waitUntilExit()
+        
+        let data = grepOutput.readDataToEndOfFile()
+        var DiskIDs = [Character]()
+        var output  = String(data: data, encoding: String.Encoding.utf8)
+        var countIndex = 0
+        var USBIndex = (output?.range(of: "disk"))
+        if( USBIndex?.isEmpty )!
+        {
+            return
+        }
+        while( USBIndex != nil){
+            let sizeOfMount =  CheckSizeUSB(NSNumber(value:Int(countIndex)))
+            let sizeDouble = Double(Double(Int(sizeOfMount / 10000000))/100.0)
+            var bufString : String = "disk"
+            bufString += "\(output![USBIndex!.upperBound])"
+            bufString += "             "
+            bufString += "\(sizeDouble)"
+            bufString += " GB"
+            if( sizeDouble > 0.5 && sizeDouble < 65.0){
+                if(!(DiskIDs.contains(output![USBIndex!.upperBound])))
+                {
+                    DiskIDs.append(output![USBIndex!.upperBound])
+                    self.objects.add(bufString)
                 }
             }
-            self.TableView.reloadData()
+            output?.replaceSubrange(USBIndex!, with: "MISK")
+            USBIndex = output?.range(of: "disk")
+            countIndex += 1
         }
-
     }
 
-    @IBAction func SliderValueChanged(sender: NSSlider) {
+    @IBAction func SliderValueChanged(_ sender: NSSlider) {
         let currentValue = sender.doubleValue
         ValueWindowsPartition.doubleValue = currentValue + sender.minValue
         ValueMacPartition.doubleValue = sender.maxValue - currentValue + sender.minValue
         if(DiskName != nil){
-            let TotalGB = CheckSizeUSB((NSNumber(integer:Int(DiskName)!)))
+            let TotalGB = CheckSizeUSB(CheckifUSB(DiskName))
             let calWTotal:Int = Int((ValueWindowsPartition.doubleValue * TotalGB / 100)/10000000)
             let calWin = Double((Double(calWTotal) / 100.0))
             ValueTextWin.stringValue = ""
@@ -111,14 +130,14 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
         }
     }
    
-    @IBAction func WindowsParValueChanged(sender: NSTextField) {
+    @IBAction func WindowsParValueChanged(_ sender: NSTextField) {
         let currentWinValue = sender.doubleValue
         SliderForPartition.doubleValue = currentWinValue
         ValueWindowsPartition.doubleValue = currentWinValue
         ValueMacPartition.doubleValue = 100 - currentWinValue
     }
     
-    @IBAction func MacParValueChanged(sender: NSTextField) {
+    @IBAction func MacParValueChanged(_ sender: NSTextField) {
         
         let currentMacValue = sender.doubleValue
         SliderForPartition.doubleValue = 100 - currentMacValue
@@ -126,7 +145,7 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
         ValueWindowsPartition.doubleValue = 100 - currentMacValue
     }
     
-    @IBAction func PressFormatButton(sender: NSButton) {
+    @IBAction func PressFormatButton(_ sender: NSButton) {
         //Check if there is any selected Disk => errindex 0
         if (TableView.selectedRow < 0){
             ShowWarningMsg(0)
@@ -143,25 +162,28 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
         if(ShowWarningMsg(4)){
             return
         }
+        print(DiskName)
+        print(NameWinPar.stringValue.uppercased())
+        print(ValueWindowsPartition.stringValue)
         self.Progress.startAnimation(NSButton)
-        let task = NSTask()
-        let outputFormat = NSPipe()
+        let task = Process()
+        let outputFormat = Pipe()
         task.launchPath = "/usr/bin/env"
-        task.arguments = ["diskutil", "partitionDisk","/dev/disk" + DiskName,"MBRFormat","MS-DOS", NameWinPar.stringValue.uppercaseString, ValueWindowsPartition.stringValue + "%", "HFS+", NameMacPar.stringValue , ValueMacPartition.stringValue + "%"]
+        task.arguments = ["diskutil", "partitionDisk","/dev/disk" + DiskName,"MBRFormat","MS-DOS", NameWinPar.stringValue.uppercased(), ValueWindowsPartition.stringValue + "%", "HFS+", NameMacPar.stringValue , ValueMacPartition.stringValue + "%"]
         task.standardOutput = outputFormat
         task.launch()
         task.waitUntilExit()
-        let dataFormat = outputFormat.fileHandleForReading.readDataToEndOfFile()
-        let outputString = String(dataFormat: dataFormat, encoding: NSUTF8StringEncoding)
+       // let dataFormat = outputFormat.fileHandleForReading.readDataToEndOfFile()
+       // let outputString = String(data: dataFormat, encoding: String.Encoding.utf8)
         FilltheViewTable()
         ShowWarningMsg(3)
     }
     
-    func CheckifUSB (index : String) -> NSNumber {
+    func CheckifUSB (_ index : String) -> NSNumber {
         //Check that the disk is a USB => errindex 1
-        let taskProfiler = NSTask()
-        let taskGrep = NSTask()
-        let outputPipe = NSPipe()
+        let taskProfiler = Process()
+        let taskGrep = Process()
+        let outputPipe = Pipe()
         
         taskProfiler.launchPath = "/usr/sbin/system_profiler"
         taskGrep.launchPath = "/usr/bin/grep"
@@ -172,7 +194,7 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
         taskProfiler.standardOutput = outputPipe
         taskGrep.standardInput = outputPipe
         
-        let pipeMe = NSPipe()
+        let pipeMe = Pipe()
         taskGrep.standardOutput = pipeMe
         
         let grepOutput = pipeMe.fileHandleForReading
@@ -183,33 +205,33 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
         taskGrep.waitUntilExit()
         
         let data = grepOutput.readDataToEndOfFile()
-        var output  = String(data: data, encoding: NSUTF8StringEncoding)
-        let control = output?.rangeOfString("disk" + index)
+        var output  = String(data: data, encoding: String.Encoding.utf8)
+        let control = output?.range(of: "disk" + index)
         if(control == nil){
             return -1;
         }
         else{
             var index = 0
-            var DiskRange = output?.rangeOfString("disk")
-            if( DiskRange?.count == 0)
+            var DiskRange = (output?.range(of: "disk"))
+            if( DiskRange?.isEmpty )!
             {
                 return -1
             }
-            while( control?.first != DiskRange?.first  && DiskRange != nil){
-                output?.replaceRange(DiskRange!, with: "MISK")
-                DiskRange = output?.rangeOfString("disk")
-                index++
+            while( control?.lowerBound != DiskRange?.lowerBound  && DiskRange != nil){
+                output?.replaceSubrange(DiskRange!, with: "MISK")
+                DiskRange = output?.range(of: "disk")
+                index += 1
             }
-            return index;
+            return NSNumber(value:Int(index));
         }
         
     }
     
-    func CheckSizeUSB (index : NSNumber) -> Double {
+    func CheckSizeUSB (_ index : NSNumber) -> Double {
         //Check that the disk is a USB => errindex 1
-        let taskProfiler = NSTask()
-        let taskGrep = NSTask()
-        let outputPipe = NSPipe()
+        let taskProfiler = Process()
+        let taskGrep = Process()
+        let outputPipe = Pipe()
         
         taskProfiler.launchPath = "/usr/sbin/system_profiler"
         taskGrep.launchPath = "/usr/bin/grep"
@@ -220,7 +242,7 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
         taskProfiler.standardOutput = outputPipe
         taskGrep.standardInput = outputPipe
         
-        let pipeMe = NSPipe()
+        let pipeMe = Pipe()
         taskGrep.standardOutput = pipeMe
         
         let grepOutput = pipeMe.fileHandleForReading
@@ -231,36 +253,35 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
         taskGrep.waitUntilExit()
         
         let data = grepOutput.readDataToEndOfFile()
-        var output  = String(data: data, encoding: NSUTF8StringEncoding)
-       
-            var secondIndex = 0
-            var DiskRange = output?.rangeOfString("Capacity")
-            if( DiskRange?.count == 0){
-                return 0;
+        var output  = String(data: data, encoding: String.Encoding.utf8)
+        var secondIndex = 0
+        var DiskRange = output?.range(of: "Capacity")
+        if( DiskRange?.isEmpty)!{
+            return 0;
+        }
+        while( NSNumber(value:secondIndex) != index && DiskRange != nil){
+                output?.replaceSubrange(DiskRange!, with: "MAPACITY")
+                DiskRange = output?.range(of: "Capacity")
+                secondIndex += 1
             }
-            while( secondIndex != index && DiskRange != nil){
-                output?.replaceRange(DiskRange!, with: "MAPACITY")
-                DiskRange = output?.rangeOfString("Capacity")
-                secondIndex++
-            }
-            let BufString = output?.substringFromIndex((DiskRange?.last)!)
-            var ByteRange = BufString?.rangeOfString("bytes")
-        var newString = BufString?.substringToIndex((ByteRange?.first)!)
-            ByteRange = newString?.rangeOfString("(")
-        newString = (newString?.substringFromIndex((ByteRange?.first)!))!
-        newString?.removeAtIndex((newString?.startIndex)!)
-        newString = newString?.stringByReplacingOccurrencesOfString(".", withString: "")
-        newString = (newString?.substringToIndex(newString!.endIndex.predecessor()))!
+            let BufString = output?.substring(from: (DiskRange?.upperBound)!)
+            var ByteRange = BufString?.range(of: "bytes")
+        var newString = BufString?.substring(to: (ByteRange?.lowerBound)!)
+            ByteRange = newString?.range(of: "(")
+        newString = (newString?.substring(from: (ByteRange?.lowerBound)!))!
+        newString?.remove(at: (newString?.startIndex)!)
+        newString = newString?.replacingOccurrences(of: ".", with: "")
+        newString = (newString?.substring(to: newString!.characters.index(before: newString!.endIndex)))!
             return Double(newString!)!;
     }
     
 
     
-    func ShowWarningMsg(errindex : Int)-> Bool {
+    func ShowWarningMsg(_ errindex : Int)-> Bool {
         let myPopup: NSAlert = NSAlert()
         self.Progress.stopAnimation(NSButton)
         myPopup.messageText = "Some Error occured!"
-        myPopup.alertStyle = NSAlertStyle.CriticalAlertStyle
+        myPopup.alertStyle = NSAlertStyle.critical
         switch errindex{
         case 0:
             myPopup.informativeText = "There is no selected Disk"
@@ -271,9 +292,9 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
         case 3:
             myPopup.messageText = "Task complete"
             myPopup.informativeText = "Formating the USB was succesfull"
-            myPopup.alertStyle = NSAlertStyle.InformationalAlertStyle
+            myPopup.alertStyle = NSAlertStyle.informational
         case 4:
-            myPopup.addButtonWithTitle("Cancel")
+            myPopup.addButton(withTitle: "Cancel")
             myPopup.messageText = "Are you sure to format the selected Disk?"
             myPopup.informativeText = "This Task will delete all Files on the selected disk, you should save your Data before pressing 'OK'."
 
@@ -281,7 +302,7 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
             myPopup.informativeText = ""
             
         }
-        myPopup.addButtonWithTitle("OK")
+        myPopup.addButton(withTitle: "OK")
         let responseTag = myPopup.runModal()
         if (responseTag == NSAlertFirstButtonReturn){
             return true
@@ -292,3 +313,14 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
     }
 }
 
+
+func GetDiskNumber(value: String) -> String {
+    // Find index of space.
+    let c = value.characters
+    if let space = c.index(of: "k") {
+        // Return substring.
+        // ... Use "after" to avoid including the space in the substring.
+        return value[c.index(after: space)..<value.endIndex]
+    }
+    return ""
+}
