@@ -86,10 +86,15 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
         var output  = String(data: data, encoding: String.Encoding.utf8)
         var countIndex = 0
         var USBIndex = (output?.range(of: "disk"))
+        if( USBIndex == nil)
+        {
+            return;
+        }
         if( USBIndex?.isEmpty )!
         {
             return
         }
+
         while( USBIndex != nil){
             let sizeOfMount =  CheckSizeUSB(NSNumber(value:Int(countIndex)))
             let sizeDouble = Double(Double(Int(sizeOfMount / 10000000))/100.0)
