@@ -730,7 +730,7 @@
                                     </subviews>
                                 </clipView>
                                 <scroller key="horizontalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="YES" id="Mro-dE-Zfh">
-                                    <rect key="frame" x="1" y="-15" width="0.0" height="16"/>
+                                    <rect key="frame" x="1" y="-14" width="0.0" height="15"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                 </scroller>
                                 <scroller key="verticalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="NO" id="d90-Nc-8hn">
@@ -877,9 +877,21 @@
                                     <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
+                            <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2wN-Rj-OI4">
+                                <rect key="frame" x="20" y="140" width="80" height="19"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="roundRect" title="Refresh" bezelStyle="roundedRect" alignment="center" state="mixed" borderStyle="border" allowsMixedState="YES" imageScaling="proportionallyDown" inset="2" id="S5n-Mx-UdB">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="cellTitle"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="PressRefreshButton:" target="XfG-lQ-9wD" id="BnX-hT-kfP"/>
+                                </connections>
+                            </button>
                         </subviews>
                     </view>
                     <connections>
+                        <outlet property="ButtonRefresh" destination="2wN-Rj-OI4" id="CHZ-V0-o3W"/>
                         <outlet property="NameMacPar" destination="xrg-qE-Qyb" id="fuJ-gH-9fu"/>
                         <outlet property="NameWinPar" destination="uaL-ON-xIF" id="vFe-Hf-Lwx"/>
                         <outlet property="Progress" destination="jyY-tp-UPN" id="RHH-Bw-Dke"/>

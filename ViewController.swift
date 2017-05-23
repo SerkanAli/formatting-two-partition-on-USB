@@ -21,6 +21,7 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
     @IBOutlet weak var Progress: NSProgressIndicator!
     @IBOutlet weak var ValueTextWin: NSTextField!
     @IBOutlet weak var ValueTextMac: NSTextField!
+    @IBOutlet weak var ButtonRefresh: NSButton!
     var DiskName : String!
     var objects: NSMutableArray! = NSMutableArray()
     override func viewDidLoad() {
@@ -88,6 +89,9 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
         var USBIndex = (output?.range(of: "disk"))
         if( USBIndex == nil)
         {
+            objects.removeAllObjects()
+            TableView.reloadData()
+            //TableView.clea
             return;
         }
         if( USBIndex?.isEmpty )!
@@ -150,6 +154,13 @@ class ViewController: NSViewController, NSTableViewDataSource, NSTableViewDelega
         ValueWindowsPartition.doubleValue = 100 - currentMacValue
     }
     
+    @IBAction func PressRefreshButton(_ sender: NSButton) {
+        //FilltheViewTable()
+        objects.removeAllObjects()
+        TableView.reloadData()
+
+        FilltheViewTable()
+    }
     @IBAction func PressFormatButton(_ sender: NSButton) {
         //Check if there is any selected Disk => errindex 0
         if (TableView.selectedRow < 0){
