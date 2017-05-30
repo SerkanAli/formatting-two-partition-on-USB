@@ -1,6 +1,6 @@
-# Formatting two partition on USB
-A tool for macOS, which formatting two Partition on an USB stick. 
-One Partition is for Windows and the second one for macOS
+# Formatting two partitions on USB stick
+A tool for macOS, for formatting two partitions on a USB stick. 
+One partition is for Windows and the second one for macOS
 
 <a href="https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/SerkanAli/formatting-two-partition-on-USB/tree/master/USBTOOL.app" download>>>>Download the app here </a>
 
